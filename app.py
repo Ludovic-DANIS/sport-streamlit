@@ -1,4 +1,5 @@
 import datetime
+from io import BytesIO
 
 import streamlit as st
 import pandas as pd
@@ -175,11 +176,24 @@ def main():
 
     if tab_selected == 'Télécharger':
         excel_file_name = st.text_input('Nom du fichier .xlsx', value='musculation')
-        if st.button('Télécharger'):
-            with pd.ExcelWriter(excel_file_name+".xlsx") as writer:
+
+        # Function to convert DataFrames to Excel with multiple sheets
+        @st.cache_data
+        def convert_dfs_to_excel():
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 st.session_state.df_workout.to_excel(writer, sheet_name='Musculation', index=False)
                 st.session_state.df_cardio.to_excel(writer, sheet_name='Cardio', index=False)
                 st.session_state.df_categories.to_excel(writer, sheet_name='Catégories', index=False)
+            return output.getvalue()
+
+        # Create a download button
+        st.download_button(
+            label="Télécharger",
+            data=convert_dfs_to_excel(),
+            file_name=f'{excel_file_name}.xlsx',
+            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
 
 if __name__ == "__main__":
     main()
